@@ -290,7 +290,7 @@ function showFormationList(sysName) {
                     <div class="mini-car-body" style="background-image: url('body/${c.車体アイコン}.png');"></div>
                     <div class="mini-info-in-body">${c.略号||''}${lastNo}</div>
                     ${c.左台車 ? `<img src="parts/${c.左台車}.png" class="mini-bogie mini-bogie-l">` : ''}
-                    ${c.rightBogie ? `<img src="parts/${c.右台車}.png" class="mini-bogie mini-bogie-r">` : ''}
+                    ${c.右台車 ? `<img src="parts/${c.右台車}.png" class="mini-bogie mini-bogie-r">` : ''}
                 </div>`;
             });
             row.innerHTML = h + `</div>`;
@@ -418,7 +418,6 @@ function renderHistoryList(events, title = "車歴", isFiltered = false) {
     events.forEach(ev => {
         const targetCarNos = ev.carNos && ev.carNos.length > 0 ? ev.carNos : currentCars.filter(c => ev.carIds.includes(c.車両ID)).map(c => c.車両番号);
         
-        // フィルタリング中（車両単体表示）の場合は括弧書きを表示しない
         const suffix = (isFiltered || targetCarNos.length === currentCars.length) ? "" : ` (${targetCarNos.join(', ')})`;
         
         hList.innerHTML += `
@@ -434,7 +433,6 @@ function renderHistoryList(events, title = "車歴", isFiltered = false) {
 
 function filterHistoryByCar(carId, carNo) {
     const filtered = fullHistoryEvents.filter(ev => ev.carIds.includes(carId));
-    // 第3引数にtrueを渡してフィルタリング中であることを伝える
     renderHistoryList(filtered, `車歴 (${carNo})`, true);
     document.querySelector('.history-section').scrollIntoView({ behavior: 'smooth' });
 }
