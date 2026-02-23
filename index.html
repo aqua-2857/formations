@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>編成表</title>
+    <title>編成表･車歴表</title>
+    <link rel="icon" href="image/icon.png">
+    <link rel="apple-touch-icon" href="image/icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1c1c1c">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
+    <meta name="apple-mobile-web-app-title" content="編成表･車歴表">
+    
     <style>
         :root { 
             --header-bg: #1c1c1c; 
@@ -11,42 +20,105 @@
             --text-main: #333333;
             --sub-gray: #808080;
             --bar-bg: #333333;
+            --accent-color: #444444;
         }
 
         body { font-family: sans-serif; background: var(--main-bg); margin: 0; color: var(--text-main); -webkit-tap-highlight-color: transparent; }
         
-        .header { background: var(--header-bg); color: white; padding: 15px; display: flex; align-items: center; gap: 10px; font-size: 1.1rem; position: sticky; top: 0; z-index: 100; }
+        .header { 
+            background: var(--header-bg); 
+            color: white; 
+            padding: 0 15px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            height: 56px;
+            font-size: 1.1rem; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+        }
 
+        /* ハンバーガーボタン */
+        .menu-btn {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            z-index: 200;
+        }
+        .menu-btn span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background-color: white;
+            transition: 0.3s;
+        }
+
+        /* ナビゲーションメニュー */
+        .nav-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 250px;
+            height: 100%;
+            background: rgba(28, 28, 28, 0.95);
+            z-index: 150;
+            transition: 0.3s;
+            padding-top: 60px;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.5);
+        }
+        .nav-menu.active {
+            right: 0;
+        }
+        .nav-menu-item {
+            padding: 20px;
+            color: white;
+            border-bottom: 1px solid #444;
+            cursor: pointer;
+            font-size: 16px;
+            display: block;
+            text-decoration: none;
+        }
+        .nav-menu-item:active {
+            background: var(--accent-color);
+        }
+
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 140;
+        }
+        .menu-overlay.active {
+            display: block;
+        }
+
+        /* ページコンテンツ用スタイル */
+        .page-content { padding: 20px; line-height: 1.6; }
+        .page-content h2 { font-size: 1.2rem; border-left: 4px solid var(--header-bg); padding-left: 10px; margin-top: 0; }
+
+        /* 既存のリスト表示用スタイル */
         .system-section { background: var(--bar-bg); color: white; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; margin-top: 1px; cursor: pointer; }
         .system-title { display: flex; align-items: center; gap: 10px; font-weight: bold; }
         .system-icon { width: 35px; height: 35px; background: white; border-radius: 4px; object-fit: contain; flex-shrink: 0; }
         .arrow { transition: transform 0.3s; font-size: 12px; }
-
         .formation-list-bg { padding: 15px 10px; display: none; }
         .formation-list-bg.show { display: block; }
-
         .line-sys-row { padding: 15px 5px; cursor: pointer; border-bottom: 1px solid #ccc; font-weight: bold; color: var(--text-main); font-size: 15px; }
-
         .direction-label { color: var(--sub-gray); font-size: 11px; margin-bottom: 25px; display: flex; justify-content: space-between; font-weight: bold; }
-        
         .formation-row { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; margin-bottom: 25px; cursor: pointer; }
         .f-name-tag { background: none; color: var(--text-main); font-weight: bold; min-width: 45px; text-align: left; font-size: 14px; flex-shrink: 0; }
-        
-        .car-mini-list { 
-            display: flex; 
-            gap: 1px; 
-            align-items: flex-end; 
-            flex-wrap: wrap; 
-            width: 100%;
-        }
-
-        .mini-car-container { 
-            position: relative; 
-            width: calc((100vw - 30px) / 6.2); 
-            max-width: 68px; 
-            aspect-ratio: 68 / 48; 
-        }
-        
+        .car-mini-list { display: flex; gap: 1px; align-items: flex-end; flex-wrap: wrap; width: 100%; }
+        .mini-car-container { position: relative; width: calc((100vw - 30px) / 6.2); max-width: 68px; aspect-ratio: 68 / 48; }
         .mini-panta { position: absolute; width: 14.7%; z-index: 5; top: 12.5%; }
         .mini-panta-l { left: 11.7%; }
         .mini-panta-r { right: 11.7%; }
@@ -54,20 +126,16 @@
         .mini-panta-l.panta-p0 { left: 4.4%; }
         .mini-panta-r.panta-p0 { right: 4.4%; }
         .mini-panta.low-panta { top: 22.9%; } 
-
         .mini-bogie { position: absolute; width: 23.5%; z-index: 5; bottom: 12.5%; }
         .mini-bogie-l { left: 11.7%; }
         .mini-bogie-r { right: 11.7%; }
         .mini-car-body { width: 100%; height: 58.3%; position: absolute; bottom: 20.8%; z-index: 10; background-size: contain; background-repeat: no-repeat; background-position: bottom; }
-        
         .mini-info-in-body { position: absolute; bottom: 37.5%; width: 100%; text-align: center; z-index: 20; color: white; font-weight: bold; font-size: min(8px, 1.8vw); text-shadow: 1px 1px 1px rgba(0,0,0,0.8); white-space: nowrap; pointer-events: none; }
-
         .section-title { font-size: 16px; font-weight: bold; margin-bottom: 12px; color: var(--text-main); }
         .detail-info-box { padding: 20px; color: var(--text-main); line-height: 1.6; font-size: 14px; }
         .info-row { display: flex; margin-bottom: 5px; }
         .info-label { width: 100px; color: var(--sub-gray); flex-shrink: 0; }
         .stamp-icon-large { height: 32px; }
-        
         .divider { height: 1px; background-color: var(--sub-gray); margin: 10px 20px; }
         .car-detail-list { padding: 0 10px; }
         .car-unit { display: flex; flex-direction: column; margin-bottom: 45px; }
@@ -75,7 +143,6 @@
         .car-img-container { position: relative; width: 160px; height: 80px; flex-shrink: 0; cursor: pointer; }
         .detail-car-body { width: 100%; height: 50px; position: absolute; bottom: 14px; z-index: 10; background-size: contain; background-repeat: no-repeat; background-position: center; }
         .car-no-inline { position: absolute; top: calc(52% - 3px); left: 50%; transform: translate(-50%, -50%); z-index: 20; color: white; font-size: 14px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,1); white-space: nowrap; }
-        
         .panta-detail { position: absolute; top: -5px; width: 22px; z-index: 5; } 
         .panta-left { left: 22px; }
         .panta-right { right: 22px; }
@@ -83,15 +150,12 @@
         .panta-left.panta-p0 { left: 11px; }
         .panta-right.panta-p0 { right: 11px; }
         .panta-detail.low-panta { top: 5px; } 
-
         .bogie { position: absolute; bottom: 4px; width: 40px; z-index: 5; }
         .bogie-left { left: 22px; }
         .bogie-right { right: 22px; }
-        
         .car-meta { font-size: 12px; color: #333333; font-weight: bold; flex-grow: 1; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .car-data-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; font-size: 13px; color: #333333; }
         .stamp-small { height: 32px; }
-
         .history-section { border-top: 1px solid var(--sub-gray); margin-top: 20px; padding: 20px; }
         .history-item { margin-bottom: 18px; }
         .history-top-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
@@ -104,18 +168,39 @@
 </head>
 <body>
 
+<div class="menu-overlay" id="menu-overlay" onclick="toggleMenu()"></div>
+<div class="nav-menu" id="nav-menu">
+    <div class="nav-menu-item" onclick="showAbout()">このサイトについて</div>
+    <div class="nav-menu-item" onclick="location.reload();">リロード</div>
+</div>
+
 <div id="home-view">
-    <div class="header">ホーム</div>
+    <div class="header">
+        <span>ホーム</span>
+        <div class="menu-btn" onclick="toggleMenu()">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
     <div id="accordion-container"></div>
 </div>
 
 <div id="formation-view" class="hidden">
-    <div class="header" onclick="showHome()" style="cursor:pointer;">◀ <span id="formation-header-title">系統名</span></div>
+    <div class="header">
+        <span onclick="showHome()" style="cursor:pointer;">◀ <span id="formation-header-title">系統名</span></span>
+        <div class="menu-btn" onclick="toggleMenu()">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
     <div id="formation-accordion-container"></div>
 </div>
 
 <div id="detail-view" class="hidden">
-    <div class="header" onclick="showFormation()" style="cursor:pointer;">◀ <span id="detail-header-title">編成名</span></div>
+    <div class="header">
+        <span onclick="showFormation()" style="cursor:pointer;">◀ <span id="detail-header-title">編成名</span></span>
+        <div class="menu-btn" onclick="toggleMenu()">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
     <div class="detail-info-box">
         <div class="section-title">編成情報</div>
         <div class="info-row"><span class="info-label">車両形式</span> <span id="info-type"></span></div>
@@ -131,6 +216,58 @@
     </div>
 </div>
 
+<div id="about-view" class="hidden">
+    <div class="header">
+        <span onclick="showHome()" style="cursor:pointer;">◀ このサイトについて</span>
+        <div class="menu-btn" onclick="toggleMenu()">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+    <div class="page-content">
+        <h2>このサイトについて</h2>
+        <p> 本サイトは、鉄道車両の編成、車歴をまとめたサイトです。日々データの追加、更新中です。 </p> 
+
+ <p> 本サイトならびにデータは個人の趣味で制作・運営されており、各鉄道会社とは一切関係ありません。 </p> 
+
+ <p> 本サイトのデータは、自ら調査した情報のほか、公表されている各種資料、鉄道雑誌、およびSNS等による目撃情報等を集計・整理したものです。情報の正確性については細心の注意を払っておりますが、その内容を保証するものではありません。万が一、情報の誤りによって損害が生じた場合でも、制作者は一切の責任を負いかねます。 </p> 
+
+ <p> アイコン、画像データ等は制作者が作成したものであり、著作権は制作者に帰属します。転載は自由ですが、制作者や引用元を記載していただけるとありがたいです。また、商用目的での利用は固くお断りします。 </p> 
+
+ <p> お問い合わせはTwitter(現𝕏)のDMからお願いします。 </p> 
+
+ <p> <a href="https://x.com/aqua_2857s?s=21" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: none; padding: 10px; display: inline-block;">
+<img src="image/x.png"
+alt="icon" style= "height: 0.8em; width: auto; object-fit: contain; margin-right:
+8px; ">
+<span style="font-weight:
+bold; font-size: 16px： ">
+ミズイルカ
+<img src="image/link.png"
+alt="icon" style= "height: 0.8em; width: auto; object-fit: contain; margin-right:
+8px; ">
+<span style="font-weight:
+bold; font-size: 16px： "> </span>
+</ a>
+</div>
+
+        <div id="last-update" style="font-size: 12px; color: #808080; padding: 10px;"></div>
+
+<script>
+  
+    const lastUpdate = new Date(document.lastModified);
+    const year = lastUpdate.getFullYear();
+    const month = lastUpdate.getMonth() + 1;
+    const day = lastUpdate.getDate();
+    const hour = ("0" + lastUpdate.getHours()).slice(-2);
+    const min = ("0" + lastUpdate.getMinutes()).slice(-2);
+
+    document.getElementById('last-update').innerText = 
+        `最終更新: ${year}年${month}月${day}日 ${hour}:${min}`;
+</script>
+
+</div›
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 <script>
 let formationData = [];
@@ -141,6 +278,36 @@ let currentCars = [];
 let fullHistoryEvents = []; 
 const PANTA_MAP = { '◇': 'p0', '＜': 'p1', '＞': 'p2', '<': 'py1', '>': 'py2' };
 
+// メニュー・表示切替
+function toggleMenu() {
+    document.getElementById('nav-menu').classList.toggle('active');
+    document.getElementById('menu-overlay').classList.toggle('active');
+}
+
+function hideAllViews() {
+    document.getElementById('home-view').classList.add('hidden');
+    document.getElementById('formation-view').classList.add('hidden');
+    document.getElementById('detail-view').classList.add('hidden');
+    document.getElementById('about-view').classList.add('hidden');
+}
+
+function showHome() {
+    hideAllViews();
+    document.getElementById('home-view').classList.remove('hidden');
+}
+
+function showFormation() {
+    hideAllViews();
+    document.getElementById('formation-view').classList.remove('hidden');
+}
+
+function showAbout() {
+    hideAllViews();
+    document.getElementById('about-view').classList.remove('hidden');
+    toggleMenu(); // メニューを閉じる
+}
+
+// データの読み込み
 function loadAllData() {
     return new Promise((resolve) => {
         Papa.parse('file - formation.csv', {
@@ -173,6 +340,7 @@ loadAllData().then(() => {
     renderHome();
 });
 
+// 以降のヘルパー・レンダー関数は元のコードと同じ
 function formatDateJP(dateStr) {
     if (!dateStr || dateStr.trim() === "") return "";
     const parsePart = (part, context = {}) => {
@@ -237,7 +405,7 @@ function renderHome() {
 
 function showFormationList(sysName) {
     currentSystem = sysName;
-    document.getElementById('home-view').classList.add('hidden');
+    hideAllViews();
     document.getElementById('formation-view').classList.remove('hidden');
     document.getElementById('formation-header-title').innerText = sysName;
     window.scrollTo(0,0);
@@ -300,7 +468,7 @@ function showFormationList(sysName) {
 }
 
 function renderDetail(name, start, end, company) {
-    document.getElementById('formation-view').classList.add('hidden');
+    hideAllViews();
     document.getElementById('detail-view').classList.remove('hidden');
     window.scrollTo(0,0);
     
@@ -441,17 +609,6 @@ function toggleSection(id, el) {
     const list = document.getElementById(id);
     const isShow = list.classList.toggle('show');
     el.querySelector('.arrow').innerText = isShow ? '▲' : '▼';
-}
-
-function showHome() {
-    document.getElementById('home-view').classList.remove('hidden');
-    document.getElementById('formation-view').classList.add('hidden');
-    document.getElementById('detail-view').classList.add('hidden');
-}
-
-function showFormation() {
-    document.getElementById('formation-view').classList.remove('hidden');
-    document.getElementById('detail-view').classList.add('hidden');
 }
 </script>
 </body>
