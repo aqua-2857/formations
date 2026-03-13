@@ -132,6 +132,9 @@
         .mini-panta.panta-p0 { width: 12px; bottom: 23px; }
         .mini-panta-l.panta-p0 { left: 3px; }
         .mini-panta-r.panta-p0 { right: 3px; }
+        .mini-panta.panta-px { width: 8px; bottom: 23px; }
+        .mini-panta-l.panta-px { left: 8px; }
+        .mini-panta-r.panta-px { right: 8px; }
         .mini-panta.low-panta { bottom: 23px; } 
         
         .mini-bogie { position: absolute; height: 4px; z-index: 5; bottom: 18%; }
@@ -156,9 +159,12 @@
         .panta-detail { position: absolute; bottom: 61px; width: 22px; z-index: 5; } 
         .panta-left { left: 22px; }
         .panta-right { right: 22px; }
-        .panta-detail.panta-p0 { width: 44px; bottom: 61px; }
+        .panta-detail.panta-p0 { width: 44px; bottom: 60px; }
         .panta-left.panta-p0 { left: 11px; }
         .panta-right.panta-p0 { right: 11px; }
+        .panta-detail.panta-px { width: 22px; bottom: 61px; }
+        .panta-left.panta-px { left: 22px; }
+        .panta-right.panta-px { right: 22px; }
         .panta-detail.low-panta { bottom: 61px; } 
         .bogie { position: absolute; bottom: 5px; height: 15px; z-index: 5; }
         .bogie-left { left: 5%; }
@@ -248,13 +254,13 @@
 
 <div id="about-view" class="hidden">
     <div class="header">
-        <span onclick="showHome()" style="cursor:pointer;">◀ このサイトについて</span>
+        <span onclick="showHome()" style="cursor:pointer;">◀ このウェブアプリについて</span>
         <div class="menu-btn" onclick="toggleMenu()">
             <span></span><span></span><span></span>
         </div>
     </div>
     <div class="page-content">
-     <h2>このアプリについて</h2>
+     <h2>このウェブアプリについて</h2>
         <p> 本アプリは、鉄道車両の編成、車歴をまとめたウェブアプリです。日々データの追加、更新中です。 </p> 
         <p> 本アプリならびにデータは個人の趣味で制作・運営されており、各鉄道会社とは一切関係ありません。 </p> 
         <p> 本アプリのデータは、自ら調査した情報のほか、公表されている各種資料、鉄道雑誌、およびSNS等による目撃情報等を集計・整理したものです。情報の正確性については細心の注意を払っておりますが、その内容を保証するものではありません。 </p> 
@@ -281,7 +287,7 @@ let historyData = [];
 let currentSystem = "";
 let currentCars = [];
 let fullHistoryEvents = []; 
-const PANTA_MAP = { '◇': 'p0', '＜': 'p1', '＞': 'p2', '<': 'py1', '>': 'py2' };
+const PANTA_MAP = { '◇': 'p0', '＜': 'p1', '＞': 'p2', '<': 'py1', '>': 'py2', 'x': 'px' };
 
 // メニュー・表示切替
 function toggleMenu() {
@@ -360,9 +366,10 @@ function formatDateJP(dateStr) {
     };
     const stringify = (obj) => {
         let res = "";
-        if (obj.y) res += obj.y + "年";
-        if (obj.m) res += obj.m + "月";
-        if (obj.d) res += obj.d + "日";
+        // Number() を使用して "01" 等を数値変換し、先頭の0を消去
+        if (obj.y) res += Number(obj.y) + "年";
+        if (obj.m) res += Number(obj.m) + "月";
+        if (obj.d) res += Number(obj.d) + "日";
         return res;
     };
     if (dateStr.includes('-')) {
@@ -549,7 +556,7 @@ function renderDetail(name, start, end, company, note) {
 
         if (carMeta.落成日 && carMeta.製造所) {
             historyPool.push({
-                date: carMeta.落成日, stamp: 'rakusei', desc: `${carMeta.製造所}にて落成。`, carId: carId, carNo: c.車両番号
+                date: carMeta.落成日, stamp: 'rakusei', desc: `${carMeta.製造所}にて落成。`, carIds: [carId], carNos: [c.車両番号]
             });
         }
 
@@ -604,10 +611,22 @@ function renderDetail(name, start, end, company, note) {
         }
     });
 
-    historyPool.sort((a, b) => (a.date || "").replace(/\//g,'').localeCompare((b.date || "").replace(/\//g,'')));
+    const indexedPool = historyPool.map((item, index) => ({ ...item, originalIndex: index }));
+    indexedPool.sort((a, b) => {
+        const normalize = (d) => {
+            if (!d) return "";
+            return d.split('-')[0].split('/').map(s => s.padStart(2, '0')).join('');
+        };
+        const dA = normalize(a.date);
+        const dB = normalize(b.date);
+        if (dA.substring(0, 6) === dB.substring(0, 6) && (dA === dB || dA.includes('?') || dB.includes('?'))) {
+            return a.originalIndex - b.originalIndex;
+        }
+        return dA.localeCompare(dB);
+    });
     
     fullHistoryEvents = [];
-    historyPool.forEach(item => {
+    indexedPool.forEach(item => {
         const prev = fullHistoryEvents[fullHistoryEvents.length - 1];
         if (prev && prev.date === item.date && prev.desc === item.desc && prev.stamp === item.stamp) {
             if (item.carNo) prev.carNos.push(item.carNo);
