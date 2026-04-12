@@ -350,51 +350,31 @@ function showDetailFromCarHistory() {
 // データの読み込み
 function loadAllData() {
     return new Promise((resolve) => {
-        // 分割されたファイル名のリスト
-        const formationFiles = [
-            'file - formation1.csv',
-            'file - formation2.csv',
-            'file - formation3.csv'
-        ];
+        Papa.parse('file - formation.csv', {
+            download: true, header: true, skipEmptyLines: 'greedy',
+            complete: function(fResults) {
+                formationData = fResults.data.filter(r => r.会社名 && r.会社名.trim() !== "");
+                
+                Papa.parse('file - car_id.csv', {
+                    download: true, header: true, skipEmptyLines: 'greedy',
+                    complete: function(cResults) {
+                        cResults.data.forEach(row => {
+                            if(row['車両ID']) carIdMap[row['車両ID']] = row;
+                        });
 
-        // すべてのformationファイルを読み込むPromiseの配列を作成
-        const formationPromises = formationFiles.map(file => {
-            return new Promise((res) => {
-                Papa.parse(file, {
-                    download: true,
-                    header: true,
-                    skipEmptyLines: 'greedy',
-                    complete: (results) => res(results.data)
+                        Papa.parse('file - history.csv', {
+                            download: true, header: true, skipEmptyLines: 'greedy',
+                            complete: function(hResults) {
+                                historyData = hResults.data;
+                                resolve();
+                            }
+                        });
+                    }
                 });
-            });
-        });
-
-        // 全てのCSV読み込みが完了したら統合する
-        Promise.all(formationPromises).then((resultsArray) => {
-            // resultsArrayは [[data1], [data2], [data3]] の形式なので、一つに結合する
-            formationData = resultsArray.flat().filter(r => r.会社名 && r.会社名.trim() !== "");
-
-            // その後、既存のcar_idとhistoryを読み込む
-            Papa.parse('file - car_id.csv', {
-                download: true, header: true, skipEmptyLines: 'greedy',
-                complete: function(cResults) {
-                    cResults.data.forEach(row => {
-                        if(row['車両ID']) carIdMap[row['車両ID']] = row;
-                    });
-
-                    Papa.parse('file - history.csv', {
-                        download: true, header: true, skipEmptyLines: 'greedy',
-                        complete: function(hResults) {
-                            historyData = hResults.data;
-                            resolve();
-                        }
-                    });
-                }
-            });
+            }
         });
     });
 }
-
 
 loadAllData().then(() => {
     renderHome();
