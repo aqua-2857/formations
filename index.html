@@ -116,7 +116,7 @@
         /* 既存のリスト表示用スタイル */
         .system-section { background: var(--bar-bg); color: white; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; margin-top: 1px; cursor: pointer; }
         .system-title { display: flex; align-items: center; gap: 10px; font-weight: bold; }
-        .system-icon { width: 35px; height: 35px; background: white; border-radius: 4px; object-fit: contain; flex-shrink: 0; }
+        .system-icon { width: 35px; height: 35px; background: transparent; border-radius: 4px; object-fit: contain; flex-shrink: 0; }
         .arrow { transition: transform 0.3s; font-size: 12px; }
         .formation-list-bg { padding: 15px 10px; display: none; }
         .formation-list-bg.show { display: block; }
@@ -148,7 +148,7 @@
         .mini-bogie-c { left: 50%; transform: translateX(-50%); }
         .mini-bogie-r { right: 4px; }
 
-        .mini-info-in-body { position: absolute; bottom: 35%; width: 100%; text-align: center; z-index: 20; color: white; font-weight: bold; font-size: min(8px, 1.8vw); text-shadow: 1px 1px 1px rgba(0,0,0,0.8); white-space: nowrap; pointer-events: none; }
+        .mini-info-in-body { position: absolute; bottom: 35%; width: 100%; text-align: center; z-index: 20; color: white; font-weight: bold; font-size: min(8px, 1.8vw); text-shadow: 0px 0px 2px rgba(0,0,0,1); white-space: nowrap; pointer-events: none; }
         
         .section-title { font-size: 16px; font-weight: bold; margin-bottom: 12px; color: var(--text-main); }
         .detail-info-box { padding: 20px; color: var(--text-main); line-height: 1.6; font-size: 14px; }
@@ -161,7 +161,7 @@
         .car-visual-row { display: flex; align-items: center; gap: 8px; }
         .car-img-container { position: relative; width: fit-content; height: 80px; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; }
         .detail-car-body { height: 50px; width: auto; position: relative; top: 2px; z-index: 10; background-size: contain; background-repeat: no-repeat; background-position: center; }
-        .car-no-inline { position: absolute; top: calc(52% - 3px); left: 50%; transform: translate(-50%, -50%); z-index: 20; color: white; font-size: 14px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,1); white-space: nowrap; }
+        .car-no-inline { position: absolute; top: calc(52% - 3px); left: 50%; transform: translate(-50%, -50%); z-index: 20; color: white; font-size: 14px; font-weight: bold; text-shadow: 0px 0px 2px rgba(0,0,0,1); white-space: nowrap; }
         .panta-detail { position: absolute; bottom: 61px; width: 22px; z-index: 5; } 
         .panta-left { left: 22px; }
         .panta-right { right: 22px; }
@@ -350,31 +350,51 @@ function showDetailFromCarHistory() {
 // データの読み込み
 function loadAllData() {
     return new Promise((resolve) => {
-        Papa.parse('file - formation.csv', {
-            download: true, header: true, skipEmptyLines: 'greedy',
-            complete: function(fResults) {
-                formationData = fResults.data.filter(r => r.会社名 && r.会社名.trim() !== "");
-                
-                Papa.parse('file - car_id.csv', {
-                    download: true, header: true, skipEmptyLines: 'greedy',
-                    complete: function(cResults) {
-                        cResults.data.forEach(row => {
-                            if(row['車両ID']) carIdMap[row['車両ID']] = row;
-                        });
+        // 分割されたファイル名のリスト
+        const formationFiles = [
+            'file - formation1.csv',
+            'file - formation2.csv',
+            'file - formation3.csv'
+        ];
 
-                        Papa.parse('file - history.csv', {
-                            download: true, header: true, skipEmptyLines: 'greedy',
-                            complete: function(hResults) {
-                                historyData = hResults.data;
-                                resolve();
-                            }
-                        });
-                    }
+        // すべてのformationファイルを読み込むPromiseの配列を作成
+        const formationPromises = formationFiles.map(file => {
+            return new Promise((res) => {
+                Papa.parse(file, {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: 'greedy',
+                    complete: (results) => res(results.data)
                 });
-            }
+            });
+        });
+
+        // 全てのCSV読み込みが完了したら統合する
+        Promise.all(formationPromises).then((resultsArray) => {
+            // resultsArrayは [[data1], [data2], [data3]] の形式なので、一つに結合する
+            formationData = resultsArray.flat().filter(r => r.会社名 && r.会社名.trim() !== "");
+
+            // その後、既存のcar_idとhistoryを読み込む
+            Papa.parse('file - car_id.csv', {
+                download: true, header: true, skipEmptyLines: 'greedy',
+                complete: function(cResults) {
+                    cResults.data.forEach(row => {
+                        if(row['車両ID']) carIdMap[row['車両ID']] = row;
+                    });
+
+                    Papa.parse('file - history.csv', {
+                        download: true, header: true, skipEmptyLines: 'greedy',
+                        complete: function(hResults) {
+                            historyData = hResults.data;
+                            resolve();
+                        }
+                    });
+                }
+            });
         });
     });
 }
+
 
 loadAllData().then(() => {
     renderHome();
